@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>File Upload</title>
+  </head>
+  <body>
+    <h1>Hello</h1>
+    <form method="post" enctype="multipart/form-data">
+      <p>The input data file:</p>
+      <input type="file" name="file" accept=".xls" />
+      <p>From:</p>
+      <input type="date" name="start_date" />
+      <p>To:</p>
+      <input type="date" name="end_date" />
+      <p><button type="submit">Submit</button></p>
+    </form>
+    {% if message %}
+    <p>{{ message }}</p>
+    {% endif %} {% if data %}
+    <p>The output tables:</p>
+    {% for dataframe in [data.output_table1, data.output_table2,
+    data.output_table3] %}
+    <p>Table:</p>
+    {{ dataframe.to_html()|safe }} {% endfor %} {% endif %} {% if output_file %}
+    <p>Output File:</p>
+    <p><a href="/download/{{ output_file }}">{{ output_file }}</a></p>
+    {% endif %}
+  </body>
+</html>
