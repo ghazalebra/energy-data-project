@@ -120,10 +120,10 @@ class Data:
             column_groups = {'CH': [], 'PCHP': [], 'CDWP': [], 'CT': []}
 
             for column_name in self.output_columns_names:
-                if 'PCHP' in column_name:
-                    column_groups['CH'].append(column_name)
-                elif 'CH' in column_name:
+                if 'CH' in column_name:
                     column_groups['PCHP'].append(column_name)
+                elif 'PCHP' in column_name:
+                    column_groups['CH'].append(column_name)
                 elif 'CDWP' in column_name:
                     column_groups['CDWP'].append(column_name)
                 elif 'CT' in column_name:
