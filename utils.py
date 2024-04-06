@@ -5,11 +5,19 @@ import numpy as np
 
 class Data:
 
-    def __init__(self, file=None, start_date='2023-08-01', end_date='2023-08-02', output_file_name="output.xlsx"):
+    def __init__(self, file=None, start_date='2023-08-01', start_time="0:00:00", end_date='2023-08-31', end_time="23:59:00", output_file_name="output.xlsx"):
         self.file = file
-        self.start_date = start_date
-        self.end_date = end_date
+        self.start_date = pd.to_datetime(start_date)
+        self.end_date = pd.to_datetime(end_date)
         self.output_file_name = output_file_name
+
+        self.start_time =  pd.to_datetime(start_time).time()
+        self.end_time = pd.to_datetime(end_time).time()
+
+        self.target_dates = pd.date_range(start=self.start_date, end=self.end_date)
+
+        self.num_days = len(self.target_dates)
+        
     
     num_cols = 29
     input_column_names = ["Date", "Time", "OA RH", "OA TEMP", "CH-1 \n冰水主機", "PCHP-1 \n冰水泵", "CDWP-1 \n冷卻水泵",
@@ -36,17 +44,16 @@ class Data:
         "總累樍耗電量(kWh)",
         "系統累積製冷能力(RT-H)"
     ]
-    output_column_names2 = ["冷凍 能力", 
-                            "冰水機 耗電量", 
-                            "冰水泵 耗電量", 
-                            "冷卻水泵 耗電量", 
-                            "冷卻水塔 耗電量", 
-                            "系統 效率值", 
-                            "約定冷能 需求量", 
-                            "改善後 能源耗用量", 
-                            "改善後 能源費用"
+    output_column_names2 = ["冷凍能力(RTh)", 
+                            "冰水機耗電量(kWh)", 
+                            "冰水泵耗電量(kWh)", 
+                            "冷卻水泵耗電量(kWh)", 
+                            "冷卻水塔耗電量(kWh)", 
+                            "系統效率值(kW/RT)", 
+                            "約定冷能需求量(RT-h/年)", 
+                            "改善後能源耗用量(kWh/年)", 
+                            "改善後能源費用(元/年)"
                             ]
-    table2_units = ["RTh", "kWh", "kWh", "kWh",	"kWh", "kW/RT", "RT-h/年", "kWh/年", "元/年"]
     output_columns_names3 = [
         "紀錄天數",
         "應具備資料數",
@@ -58,9 +65,6 @@ class Data:
         "耗能指標值KW/RT"
     ]
 
-    # start_date = pd.to_datetime(input('Enter the start date please: ') or '2023-8-1')
-    # end_date = pd.to_datetime(input('Enter the end date please: ') or '2023-8-31')
-
     output_table1 = pd.DataFrame(columns=output_columns_names)
     output_table2 = pd.DataFrame(columns=output_column_names2)
     output_table3 = pd.DataFrame(columns=output_columns_names3)
@@ -69,46 +73,48 @@ class Data:
         try:
             df = pd.read_excel(self.file, skiprows=[0], dtype={'OA TEMP': float})
             self.input_table = df.iloc[:, :self.num_cols]
-            self.input_table['Date'] = pd.to_datetime(self.input_table['Date']).dt.date
+            # self.input_table['Date'] = [str(self.input_table['Date'][i].date()) for i in range(len(self.input_table['Date']))]
+            # self.input_table['Time'] = [str(self.input_table['Time'][i]) for i in range(len(self.input_table['Time']))]
+
+            # self.input_table['Datetime'] = pd.to_datetime(self.input_table['Date'] + ' ' + self.input_table['Time'])
+            # self.input_table.set_index('Datetime', inplace=True)
         except Exception as e:
             print('error reading the file!', e)
-            # return("An error occurred while reading the data:", e)
-
-    def find_date_range(self):
-        self.target_dates = [date.date() for date in pd.date_range(self.start_date, self.end_date, freq='d').tolist()]
-
-    def select_one_day(self, target_date):
-        """
-        Selects data corresponding to 1 day
-        """
-        try:
-
-            dates = self.input_table["Date"]
-            
-            # Select rows with the target data
-            target_rows = self.input_table[dates == target_date]
-            
-            return target_rows
-        
-        except Exception as e:
-            print("An error occurred:", e)
-            return None
     
-    def select_days(self):
-        self.input_rows = {target_date: self.select_one_day(target_date) for target_date in self.target_dates}
-        
-    def create_table1(self):
-        if self.input_rows is not None:
-            dates = self.input_rows.keys()
-            for i, date in enumerate(dates):
+    def select_rows(self):
 
-                data = self.input_rows[date]
+        self.input_table['Date'] = [str(self.input_table['Date'][i].date()) for i in range(len(self.input_table['Date']))]
+        self.input_table['Time'] = [str(self.input_table['Time'][i]) for i in range(len(self.input_table['Time']))]
+
+        self.input_table['Datetime'] = pd.to_datetime(self.input_table['Date'] + ' ' + self.input_table['Time'])
+        self.input_table.set_index('Datetime', inplace=True)
+        
+        start_date = pd.to_datetime(self.start_date)
+        end_date = pd.to_datetime(self.end_date)
+        
+        # Filter rows based on specified date range
+        self.input_rows = self.input_table.loc[start_date:end_date]
+        
+        # Filter rows based on specified time range
+        start_time = pd.to_datetime(self.start_time).time()
+        end_time = pd.to_datetime(self.end_time).time()
+        self.input_rows = self.input_rows.between_time(start_time, end_time).iloc[:, 2:]
+
+        return self.input_rows
+    
+    def create_table1(self):
+        if self.input_table is not None:
+            
+            for i, date in enumerate(self.target_dates):
+                data = self.input_table[(self.input_table['Date'] == date) & (self.input_table['Time'] >= self.start_time) 
+                                        & (self.input_table['Time'] <= self.end_time)]
+
+
                 self.output_table1.loc[i] = [date, data['OA TEMP'].mean(), data['OA RH'].mean()] + [np.round(data[self.input_column_names[j]].sum()/60) for j in range(4, 17)] + [np.round(data[self.input_column_names[20]].sum()/60)]
 
             self.output_table1.iloc[:, 1:] = self.output_table1.iloc[:, 1:].apply(pd.to_numeric, errors='coerce')
-            # print(output_table1)
-            self.output_table1.loc[len(dates)] = ['合計'] +  [np.round(self.output_table1.loc[:, self.output_columns_names[j]].mean(), 2) for j in range(1, 3)] + [self.output_table1.loc[:, self.output_columns_names[j]].sum() for j in range(3, 17)]
-            self.output_table1.iloc[len(dates), 1:] = self.output_table1.iloc[len(dates), 1:].apply(pd.to_numeric, errors='coerce')
+            self.output_table1.loc[self.num_days] = ['合計'] +  [np.round(self.output_table1.loc[:, self.output_columns_names[j]].mean(), 2) for j in range(1, 3)] + [self.output_table1.loc[:, self.output_columns_names[j]].sum() for j in range(3, 17)]
+            self.output_table1.iloc[self.num_days, 1:] = self.output_table1.iloc[self.num_days, 1:].apply(pd.to_numeric, errors='coerce')
 
         else:
             print("Failed to read the Excel file or date not found.")
@@ -116,9 +122,7 @@ class Data:
     def create_table2(self):
         if self.output_table1 is not None:
             last_row = len(self.output_table1.index)
-            # columns containing CH
             column_groups = {'CH': [], 'PCHP': [], 'CDWP': [], 'CT': []}
-
             for column_name in self.output_columns_names:
                 if 'PCHP' in column_name:
                     column_groups['PCHP'].append(column_name)
@@ -141,13 +145,10 @@ class Data:
     def create_table3(self):
         total_data = self.input_table.shape[0]
         hot_flat_horizontal_15_number_of_transactions = self.input_table.loc[:, self.input_column_names[-1]].sum()
-        self.output_table3.loc[1] = [len(self.target_dates), total_data, total_data, (total_data - total_data)/(1440*31), hot_flat_horizontal_15_number_of_transactions, hot_flat_horizontal_15_number_of_transactions/(1440*31), 1 - hot_flat_horizontal_15_number_of_transactions/(1440*31), self.output_table2.loc[1, "系統 效率值"]]
+        self.output_table3.loc[1] = [int(self.num_days), int(total_data), int(total_data), (total_data - total_data)/(1440*31), hot_flat_horizontal_15_number_of_transactions, hot_flat_horizontal_15_number_of_transactions/(1440*31), 1 - hot_flat_horizontal_15_number_of_transactions/(1440*31), self.output_table2.loc[1, "系統效率值(kW/RT)"]]
 
     def create_output_tables(self):
         self.extract_input_table()
-        self.find_date_range()
-        print('Selecting the rows...')
-        self.select_days()
         print('Creating table 1...')
         self.create_table1()
         print('Creating table 2...')
