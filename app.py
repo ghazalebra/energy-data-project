@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, send_file
 import os
 from utils import Data
+import datetime as datetime
 
 app = Flask(__name__)
 
@@ -21,10 +22,11 @@ def index():
         if file:
             start_date = request.form['start_date']
             end_date = request.form['end_date']
-            if start_date and end_date:
-                data = Data(file, start_date, end_date)
-            else:
-                data = Data(file)
+
+            start_time = request.form['start_time_h'] + ':' + request.form['start_time_m'] + ":00"
+            end_time = request.form['end_time_h'] + ':' + request.form['end_time_m'] + ":00"
+            data = Data(file, start_date, start_time, end_date, end_time)
+
             data.create_output_tables()
             data.write_output_to_file()
             return render_template('index.html', message='Submitted successfully!', data=data, output_file=data.output_file_name)

@@ -10,20 +10,35 @@
     <form method="post" enctype="multipart/form-data">
       <p>The input data file:</p>
       <input type="file" name="file" accept=".xls" />
-      <p>From:</p>
-      <input type="date" name="start_date" />
-      <p>To:</p>
-      <input type="date" name="end_date" />
-      <p><button type="submit">Submit</button></p>
+      <p>
+        From:
+        <input type="date" name="start_date" />
+        To:
+        <input type="date" name="end_date" />
+      </p>
+      <p>
+        From:
+        <input type="text" name="start_time_h" placeholder="00" value="00" />
+        <input type="text" name="start_time_m" placeholder="00" value="00" />
+        To:
+        <input type="text" name="end_time_h" placeholder="00" value="23" />
+        <input type="text" name="end_time_m" placeholder="00" value="59" z />
+      </p>
+      <button type="submit">Submit</button>
     </form>
     {% if message %}
     <p>{{ message }}</p>
     {% endif %} {% if data %}
-    <p>The output tables:</p>
+    <p>
+      From {{data.start_date}} to {{data.end_date}} during hours from
+      {{data.start_time}} to {{data.end_time}}:
+    </p>
     {% for dataframe in [data.output_table1, data.output_table2,
     data.output_table3] %}
-    <p>Table:</p>
-    {{ dataframe.to_html()|safe }} {% endfor %} {% endif %} {% if output_file %}
+    <div>
+      {{ dataframe.to_html()|safe }} {% endfor %} {% endif %} {% if output_file
+      %}
+    </div>
     <p>Output File:</p>
     <p><a href="/download/{{ output_file }}">{{ output_file }}</a></p>
     {% endif %}

@@ -7,12 +7,12 @@ class Data:
 
     def __init__(self, file=None, start_date='2023-08-01', start_time="0:00:00", end_date='2023-08-31', end_time="23:59:00", output_file_name="output.xlsx"):
         self.file = file
-        self.start_date = pd.to_datetime(start_date)
-        self.end_date = pd.to_datetime(end_date)
+        self.start_date = pd.to_datetime(start_date) if start_date else '2023-08-01' 
+        self.end_date = pd.to_datetime(end_date) if end_date else '2023-08-31' 
         self.output_file_name = output_file_name
 
-        self.start_time =  pd.to_datetime(start_time).time()
-        self.end_time = pd.to_datetime(end_time).time()
+        self.start_time =  pd.to_datetime(start_time).time() if start_time else "0:00:00"
+        self.end_time = pd.to_datetime(end_time).time() if end_time else "23:59:00"
 
         self.target_dates = pd.date_range(start=self.start_date, end=self.end_date)
 
@@ -110,7 +110,7 @@ class Data:
                                         & (self.input_table['Time'] <= self.end_time)]
 
 
-                self.output_table1.loc[i] = [date, data['OA TEMP'].mean(), data['OA RH'].mean()] + [np.round(data[self.input_column_names[j]].sum()/60) for j in range(4, 17)] + [np.round(data[self.input_column_names[20]].sum()/60)]
+                self.output_table1.loc[i] = [date.date(), data['OA TEMP'].mean(), data['OA RH'].mean()] + [np.round(data[self.input_column_names[j]].sum()/60) for j in range(4, 17)] + [np.round(data[self.input_column_names[20]].sum()/60)]
 
             self.output_table1.iloc[:, 1:] = self.output_table1.iloc[:, 1:].apply(pd.to_numeric, errors='coerce')
             self.output_table1.loc[self.num_days] = ['合計'] +  [np.round(self.output_table1.loc[:, self.output_columns_names[j]].mean(), 2) for j in range(1, 3)] + [self.output_table1.loc[:, self.output_columns_names[j]].sum() for j in range(3, 17)]
