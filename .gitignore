@@ -1,3 +1,4 @@
 __pycache__/
 examples/
 tests/
+.DS_Store
